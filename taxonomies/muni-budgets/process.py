@@ -1,7 +1,29 @@
 from dataflows import Flow, add_computed_field
 
 from dgp.core.base_enricher import ColumnTypeTester, \
-        DatapackageJoiner, enrichments_flows
+        DatapackageJoiner, enrichments_flows, BaseEnricher
+
+
+class FilterEmptyCodes(BaseEnricher):
+
+    def test(self):
+        return True
+
+    def work(self):
+        def func(package):
+            yield package.pkg
+            for i, res in enumerate(package):
+                if i != len(package.pkg.resources) - 1:
+                    yield res
+                else:
+                    yield filter(
+                        lambda row: 'card-code' not in row or row['card-code'],
+                        res
+                    )
+        return func
+
+    def postflow(self):
+        return Flow(self.work())
 
 
 class MunicipalityNameToCodeEnricher(ColumnTypeTester, DatapackageJoiner):
@@ -149,6 +171,7 @@ def flows(config, context):
     return enrichments_flows(
         config, context,
         MunicipalityNameToCodeEnricher,
+        FilterEmptyCodes,
         CardFunctionalCodeSplitter,
         CardEconomicCodeSplitter,
         CardCode1ToDirection,

@@ -3,3 +3,8 @@ muni-budgets:
   column_types: muni-budgets/column_types.json
   header_mapping: muni-budgets/header_mapping.yaml
   processing_module: muni-budgets/process.py
+  config:
+    key-fields:
+      - municipality:name
+      - fiscal-year
+      - phase
