@@ -60,6 +60,8 @@ class DatacityDgpServer(DgpServer):
         all_fields = ['_source'] + fields
 
         TARGET = 'configurations'
+        saved_config = config._unflatten()
+        saved_config.setdefault('publish', {})['allowed'] = False
 
         return Flow(
             duplicate(RESOURCE_NAME, TARGET),
@@ -84,7 +86,7 @@ class DatacityDgpServer(DgpServer):
                     dict(
                         operation='constant',
                         target='config',
-                        with_=config._unflatten()
+                        with_=saved_config
                     )
                 ],
                 resources=TARGET
@@ -106,7 +108,6 @@ class DatacityDgpServer(DgpServer):
             set_type('key_values', type='array'),
             set_type('snippets', type='array'),
             set_primary_key(['source']),
-            printer(),
             dump_to_sql(
                 dict([
                     (TARGET, {
