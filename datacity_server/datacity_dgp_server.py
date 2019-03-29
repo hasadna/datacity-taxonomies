@@ -18,10 +18,12 @@ class DatacityDgpServer(DgpServer):
         )
 
     def publish_flow(self, config: Config, context: Context):
-        return Flow(
-            super().publish_flow(config, context),
-            self.store_config(config, context.taxonomy)
-        )
+        super_flow = super().publish_flow(config, context)
+        if super_flow is not None:
+            return Flow(
+                super_flow,
+                self.store_config(config, context.taxonomy)
+            )
 
     def collate_values(self, fields, field):
         def func(package):
