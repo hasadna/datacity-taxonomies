@@ -1,7 +1,9 @@
-from dataflows import Flow, add_computed_field
+from dataflows import Flow, add_computed_field, delete_fields, \
+    printer, set_type
 
-from dgp.core.base_enricher import ColumnTypeTester, \
+from dgp.core.base_enricher import ColumnTypeTester, ColumnReplacer, \
         DatapackageJoiner, enrichments_flows, BaseEnricher
+from dgp.genera.consts import RESOURCE_NAME
 
 
 class FilterEmptyCodes(BaseEnricher):
@@ -26,7 +28,26 @@ class FilterEmptyCodes(BaseEnricher):
         return Flow(self.work())
 
 
-class MunicipalityNameToCodeEnricher(ColumnTypeTester, DatapackageJoiner):
+class HandleThousandsValues(ColumnReplacer):
+
+    REQUIRED_COLUMN_TYPES = ['value-thousands']
+    PROHIBITED_COLUMN_TYPES = ['value']
+
+    def operate_on_row(self, row):
+        row['value'] = row['value-thousands'] * 1000
+
+
+class RecombineCardCode(ColumnReplacer):
+
+    REQUIRED_COLUMN_TYPES = ['card:code:part1', 'card:code:part2', 'card:code:part3']
+    PROHIBITED_COLUMN_TYPES = ['card:code']
+
+    def operate_on_row(self, row):
+        codes = [row[x.replace(':', '-')] for x in self.REQUIRED_COLUMN_TYPES]
+        row['card-code'] = ''.join(x if x is not None else '' for x in codes)
+
+
+class MunicipalityNameToCodeEnricher(DatapackageJoiner):
 
     REQUIRED_COLUMN_TYPES = ['municipality:name']
     PROHIBITED_COLUMN_TYPES = ['municipality:code']
@@ -42,25 +63,35 @@ class CardFunctionalCodeSplitter(ColumnTypeTester):
     REQUIRED_COLUMN_TYPES = ['card:code']
     PROHIBITED_COLUMN_TYPES = [f'functional-classification:moin:level{i}:code' for i in range(1, 5)]
 
-    def postflow(self):
+    def conditional(self):
 
         new_fields = [x.replace(':', '-') for x in self.PROHIBITED_COLUMN_TYPES]
 
         def split_code(rows):
-            if rows.res.name != 'out':
+            print('SPLITTING?', rows.res.name)
+            if rows.res.name != RESOURCE_NAME:
                 yield from rows
             else:
                 for row in rows:
+                    code = row['card-code'].replace('.', '')
                     for i, f in enumerate(new_fields):
-                        row[f] = row['card-code'][1:i+2]
+                        row[f] = code[1:i+2]
+                    print('SPLITTING', row)
                     yield row
 
         return Flow(
             add_computed_field([dict(
-                target=f,
-                operation='constant',
-            ) for f in new_fields]),
-            split_code
+                    target=f,
+                    operation='constant',
+                ) for f in new_fields],
+                resources=RESOURCE_NAME),
+            split_code,
+            *[
+                set_type(
+                    f, columnType=ct, resources=RESOURCE_NAME
+                )
+                for (f, ct) in zip(new_fields, self.PROHIBITED_COLUMN_TYPES)
+            ],
         )
 
 
@@ -69,12 +100,12 @@ class CardEconomicCodeSplitter(ColumnTypeTester):
     REQUIRED_COLUMN_TYPES = ['card:code']
     PROHIBITED_COLUMN_TYPES = [f'economic-classification:moin:level{i}:code' for i in range(1, 4)]
 
-    def postflow(self):
+    def conditional(self):
 
         new_fields = [x.replace(':', '-') for x in self.PROHIBITED_COLUMN_TYPES]
 
         def split_code(rows):
-            if rows.res.name != 'out':
+            if rows.res.name != RESOURCE_NAME:
                 yield from rows
             else:
                 for row in rows:
@@ -84,14 +115,21 @@ class CardEconomicCodeSplitter(ColumnTypeTester):
 
         return Flow(
             add_computed_field([dict(
-                target=f,
-                operation='constant',
-            ) for f in new_fields]),
-            split_code
+                    target=f,
+                    operation='constant',
+                ) for f in new_fields],
+                resources=RESOURCE_NAME),
+            split_code,
+            *[
+                set_type(
+                    f, columnType=ct, resources=RESOURCE_NAME
+                )
+                for (f, ct) in zip(new_fields, self.PROHIBITED_COLUMN_TYPES)
+            ],
         )
 
 
-class CardCodeToOfficialCardName(ColumnTypeTester, DatapackageJoiner):
+class CardCodeToOfficialCardName(DatapackageJoiner):
 
     REQUIRED_COLUMN_TYPES = []
 
@@ -171,6 +209,8 @@ def flows(config, context):
     return enrichments_flows(
         config, context,
         MunicipalityNameToCodeEnricher,
+        HandleThousandsValues,
+        RecombineCardCode,
         FilterEmptyCodes,
         CardFunctionalCodeSplitter,
         CardEconomicCodeSplitter,

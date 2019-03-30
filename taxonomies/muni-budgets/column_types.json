@@ -34,7 +34,10 @@
         "description": "מזהה של כרטיס (סעיף התקציבי)",
         "dataType": "string",
         "unique": true,
-        "mandatory": true
+        "mandatory": true,
+        "alternatives": [
+            ["card:code:part1", "card:code:part2", "card:code:part3"]
+        ]
     },
     {
         "name": "card:name",
@@ -42,6 +45,24 @@
         "description": "שם בעברית של כרטיס (סעיף התקציבי)",
         "dataType": "string",
         "labelOf": "card:code"
+    },
+    {
+        "name": "card:code:part1",
+        "title": "מזהה כרטיס מפורק - חלק 1",
+        "description": "מזהה של כרטיס שמופיע בחלקים 1 (סעיף התקציבי)",
+        "dataType": "string"
+    },
+    {
+        "name": "card:code:part2",
+        "title": "מזהה כרטיס מפורק - חלק 2",
+        "description": "מזהה של כרטיס שמופיע בחלקים 2 (סעיף התקציבי)",
+        "dataType": "string"
+    },
+    {
+        "name": "card:code:part3",
+        "title": "מזהה כרטיס מפורק - חלק 3",
+        "description": "מזהה של כרטיס שמופיע בחלקים 3 (סעיף התקציבי)",
+        "dataType": "string"
     },
     {
         "name": "fiscal-year",
@@ -204,6 +225,15 @@
         "title": "סכום",
         "description": "התקציב עצמו, בשקלים חדשים",
         "dataType": "number",
-        "mandatory": true
+        "mandatory": true,
+        "alternatives": [
+            ["value-thousands"]
+        ]
+    },
+    {
+        "name": "value-thousands",
+        "title": "סכום באלפים",
+        "description": "התקציב עצמו, באלפי שקלים חדשים",
+        "dataType": "number"
     }
 ]
