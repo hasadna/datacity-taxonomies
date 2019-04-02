@@ -19,7 +19,8 @@ class FilterEmptyCodes(BaseEnricher):
                     yield res
                 else:
                     yield filter(
-                        lambda row: 'card-code' not in row or row['card-code'],
+                        lambda row: ('card-code' not in row or 
+                                     (row['card-code'] and len(row['card-code']) >= 10)),
                         res
                     )
         return func
@@ -34,7 +35,9 @@ class HandleThousandsValues(ColumnReplacer):
     PROHIBITED_COLUMN_TYPES = ['value']
 
     def operate_on_row(self, row):
-        row['value'] = row['value-thousands'] * 1000
+        row['value'] = (row['value-thousands'] * 1000
+                        if row.get('value-thousands') is not None
+                        else None)
 
 
 class RecombineCardCode(ColumnReplacer):
@@ -68,7 +71,6 @@ class CardFunctionalCodeSplitter(ColumnTypeTester):
         new_fields = [x.replace(':', '-') for x in self.PROHIBITED_COLUMN_TYPES]
 
         def split_code(rows):
-            print('SPLITTING?', rows.res.name)
             if rows.res.name != RESOURCE_NAME:
                 yield from rows
             else:
@@ -76,7 +78,6 @@ class CardFunctionalCodeSplitter(ColumnTypeTester):
                     code = row['card-code'].replace('.', '')
                     for i, f in enumerate(new_fields):
                         row[f] = code[1:i+2]
-                    print('SPLITTING', row)
                     yield row
 
         return Flow(
