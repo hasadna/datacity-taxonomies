@@ -3,6 +3,7 @@ import logging
 
 from aiohttp import web
 import aiopg.sa
+from sqlalchemy import create_engine
 
 from .datacity_dgp_server import DatacityDgpServer
 from .configurations import configs
@@ -13,7 +14,10 @@ app.router.add_get('/configs', configs)
 
 
 async def init_pg(app):
-    engine = await aiopg.sa.create_engine(os.environ['DATABASE_URL'])
+    if 'DATABASE_URL' in os.environ:
+        engine = await aiopg.sa.create_engine(os.environ['DATABASE_URL'])
+    else:
+        engine = create_engine('sqlite://')
     app['db'] = engine
 
 
