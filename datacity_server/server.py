@@ -17,7 +17,7 @@ async def init_pg(app):
     if 'DATABASE_URL' in os.environ:
         engine = await aiopg.sa.create_engine(os.environ['DATABASE_URL'])
     else:
-        engine = create_engine('sqlite://')
+        engine = None
     app['db'] = engine
 
 

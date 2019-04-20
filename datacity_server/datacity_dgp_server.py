@@ -3,45 +3,28 @@ import os
 from dgp_server.blueprint import DgpServer
 
 from dataflows import Flow, join_self, add_computed_field, printer, duplicate, \
-    set_type, set_primary_key, dump_to_sql
-from dgp.core import Context, Config
+    set_type, set_primary_key, dump_to_sql, add_field
+from dgp.core import Context, Config, BaseDataGenusProcessor
 from dgp.taxonomies import Taxonomy
-from dgp.genera.consts import RESOURCE_NAME
+from dgp.config.consts import RESOURCE_NAME
 
 
-class DatacityDgpServer(DgpServer):
+from .datacity_dgp import DataCityDGP
 
-    def __init__(self):
-        super().__init__(
-            os.environ.get('BASE_PATH', '/var/dgp'),
-            os.environ.get('DATABASE_URL')
-        )
 
-    def publish_flow(self, config: Config, context: Context):
-        super_flow = super().publish_flow(config, context)
-        if super_flow is not None:
-            return Flow(
-                super_flow,
-                self.store_config(config, context.taxonomy)
-            )
+class ConfigStorerDGP(BaseDataGenusProcessor):
 
-    def collate_values(self, fields, field):
-        def func(package):
-            def process(rows):
-                for row in rows:
-                    row[field] = dict((f, row[f]) for f in fields)
-                    yield row
+    def __init__(self, config, context, lazy_engine):
+        super().__init__(config, context)
+        self.lazy_engine = lazy_engine
 
-            yield package.pkg
-            for i, res in enumerate(package):
-                if i == 0:
-                    yield res
-                else:
-                    yield process(res)
-
+    def collate_values(self, fields):
+        def func(row):
+            return dict((f, row[f]) for f in fields)
         return func
 
-    def store_config(self, config: Config, taxonomy: Taxonomy):
+    def flow(self):
+        taxonomy = self.context.taxonomy
         txn_config = taxonomy.config
         fmt_str = [taxonomy.title + ' עבור:']
         fields = txn_config['key-fields']
@@ -60,7 +43,7 @@ class DatacityDgpServer(DgpServer):
         all_fields = ['_source'] + fields
 
         TARGET = 'configurations'
-        saved_config = config._unflatten()
+        saved_config = self.config._unflatten()
         saved_config.setdefault('publish', {})['allowed'] = False
 
         return Flow(
@@ -83,15 +66,12 @@ class DatacityDgpServer(DgpServer):
                         target='key_values',
                         with_=None
                     ),
-                    dict(
-                        operation='constant',
-                        target='config',
-                        with_=saved_config
-                    )
                 ],
                 resources=TARGET
             ),
-            self.collate_values(fields, 'key_values'),
+            add_field('config', 'object', saved_config, resources=TARGET),
+            add_field('fields', type='object', 
+                      default=self.collate_values(fields), resources=TARGET),
             join_self(
                 TARGET,
                 ['_source'],
@@ -115,6 +95,27 @@ class DatacityDgpServer(DgpServer):
                         'mode': 'update'
                     })
                 ]),
-                engine=self.engine,
+                engine=self.lazy_engine(),
             ),
         )
+
+
+class DatacityDgpServer(DgpServer):
+
+    def __init__(self):
+        super().__init__(
+            os.environ.get('BASE_PATH', '/var/dgp'),
+            os.environ.get('DATABASE_URL'),
+        )
+
+    def loader_dgps(self, config: Config, context: Context):
+        return [
+            DataCityDGP
+        ]
+
+    def publish_flow(self, config: Config, context: Context):
+        super_dgps = super().publish_flow(config, context)
+        super_dgps.append(
+            ConfigStorerDGP(config, context, self.lazy_engine())
+        )
+        return super_dgps

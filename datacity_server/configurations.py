@@ -20,13 +20,17 @@ configuration = Table(
 
 
 async def configs(request):
-    async with request.app['db'].acquire() as conn:
-        configurations = await conn.execute(
-            configuration.select()
-        )
-        configurations = await configurations.fetchall()
-        configurations = [dict(x) for x in configurations]
-        res = {
-            'configurations': configurations
-        }
-        return web.json_response(res)
+    configurations = []
+    try:
+        async with request.app['db'].acquire() as conn:
+            configurations = await conn.execute(
+                configuration.select()
+            )
+            configurations = await configurations.fetchall()
+            configurations = [dict(x) for x in configurations]
+    except Exception:
+        print('EMPTY CONFIGS')
+    res = {
+        'configurations': configurations
+    }
+    return web.json_response(res)
