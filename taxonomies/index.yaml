@@ -8,3 +8,11 @@ muni-budgets:
       - municipality:name
       - fiscal-year
       - phase
+muni-procurement:
+  title: תהליכי רכש/השמה
+  column_types: muni-procurement/column_types.json
+  processing_module: muni-procurement/process.py
+  config:
+    key-fields:
+      - municipality:name
+      - process:kind

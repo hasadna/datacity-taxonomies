@@ -2,8 +2,8 @@ import os
 
 from dgp_server.blueprint import DgpServer
 
-from dataflows import Flow, join_self, add_computed_field, printer, duplicate, \
-    set_type, set_primary_key, dump_to_sql, add_field
+from dataflows import Flow, add_computed_field, printer, duplicate, \
+    set_type, set_primary_key, dump_to_sql, add_field, join_with_self
 from dgp.core import Context, Config, BaseDataGenusProcessor
 from dgp.taxonomies import Taxonomy
 from dgp.config.consts import RESOURCE_NAME
@@ -48,10 +48,9 @@ class ConfigStorerDGP(BaseDataGenusProcessor):
 
         return Flow(
             duplicate(RESOURCE_NAME, TARGET),
-            join_self(
+            join_with_self(
                 TARGET,
                 all_fields,
-                TARGET,
                 dict((f, {}) for f in all_fields),
             ),
             add_computed_field(
@@ -72,10 +71,9 @@ class ConfigStorerDGP(BaseDataGenusProcessor):
             add_field('config', 'object', saved_config, resources=TARGET),
             add_field('fields', type='object', 
                       default=self.collate_values(fields), resources=TARGET),
-            join_self(
+            join_with_self(
                 TARGET,
                 ['_source'],
-                TARGET,
                 dict(
                     source=dict(name='_source'),
                     config={},

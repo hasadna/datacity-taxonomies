@@ -5,6 +5,8 @@ from dgp.core.base_enricher import ColumnTypeTester, ColumnReplacer, \
         DatapackageJoiner, enrichments_flows, BaseEnricher
 from dgp.config.consts import RESOURCE_NAME
 
+from datacity_server.processors import MunicipalityNameToCodeEnricher
+
 
 class FilterEmptyCodes(BaseEnricher):
 
@@ -48,17 +50,6 @@ class RecombineCardCode(ColumnReplacer):
     def operate_on_row(self, row):
         codes = [row[x.replace(':', '-')] for x in self.REQUIRED_COLUMN_TYPES]
         row['card-code'] = ''.join(x if x is not None else '' for x in codes)
-
-
-class MunicipalityNameToCodeEnricher(DatapackageJoiner):
-
-    REQUIRED_COLUMN_TYPES = ['municipality:name']
-    PROHIBITED_COLUMN_TYPES = ['municipality:code']
-    REF_DATAPACKAGE = 'http://next.obudget.org/datapackages/lamas-municipal-data/datapackage.json'
-    REF_KEY_FIELDS = ['name_municipality']
-    REF_FETCH_FIELDS = ['symbol_municipality_2015']
-    SOURCE_KEY_FIELDS = ['municipality-name']
-    TARGET_FIELD_COLUMNTYPES = ['municipality:code']
 
 
 class CardFunctionalCodeSplitter(ColumnTypeTester):
