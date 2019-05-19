@@ -77,7 +77,6 @@
         "title": "תאריך פרסום",
         "description": "מתי ההליך פורסם לציבור?",
         "dataType": "date",
-        "mandatory": true,
         "format": "%d/%m/%Y %H:%M:%S"
     },
     {
@@ -85,6 +84,7 @@
         "title": "תאריך אחרון להגשה",
         "description": "מתי הזדמנות אחרונה להגיש מועמדות/הצעות/השגות?",
         "dataType": "date",
+        "mandatory": true,
         "format": "%d/%m/%Y %H:%M:%S"
     },
     {
