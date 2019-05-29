@@ -77,7 +77,9 @@
         "title": "תאריך פרסום",
         "description": "מתי ההליך פורסם לציבור?",
         "dataType": "date",
-        "format": "%d/%m/%Y %H:%M:%S"
+        "options": {
+            "format": "%d/%m/%Y %H:%M:%S"
+        }
     },
     {
         "name": "process:closing-date",
@@ -85,7 +87,9 @@
         "description": "מתי הזדמנות אחרונה להגיש מועמדות/הצעות/השגות?",
         "dataType": "date",
         "mandatory": true,
-        "format": "%d/%m/%Y %H:%M:%S"
+        "options": {
+            "format": "%d/%m/%Y %H:%M:%S"
+        }
     },
     {
         "name": "process:start-date",
@@ -103,7 +107,10 @@
         "name": "process:last-update-date",
         "title": "תאריך עדכון אחרון",
         "description": "מתי פרטי התהליך עודכנו לאחרונה?",
-        "dataType": "date"
+        "dataType": "date",
+        "options": {
+            "format": "%d/%m/%Y %H:%M:%S"
+        }
     },
     {
         "name": "process:awardee-name",
@@ -166,7 +173,9 @@
         "title": "לינק לתשלום מקוון",
         "description": "לינק לתשלום מקוון",
         "dataType": "string",
-        "format": "uri"
+        "options": {
+            "format": "uri"
+        }
     },
     {
         "name": "process:documents:source",
