@@ -16,3 +16,12 @@ muni-procurement:
     key-fields:
       - municipality:name
       - process:kind
+muni-businesses:
+  title: מאגר עסקים
+  column_types: muni-businesses/column_types.json
+  processing_module: muni-businesses/process.py
+  config:
+    key-fields:
+      - municipality:name
+      - source:kind
+      - source:date

@@ -1,5 +1,3 @@
-import re
-
 from dataflows import Flow, add_computed_field, delete_fields, \
     printer, set_type
 
@@ -8,28 +6,28 @@ from dgp.core.base_enricher import ColumnTypeTester, ColumnReplacer, \
 from dgp.config.consts import RESOURCE_NAME
 
 from datacity_server.processors import MunicipalityNameToCodeEnricher, \
-    FilterEmptyFields
-
-
-class SelectLatestProcessEnricher(DuplicateRemover):
-
-    ORDER_BY_KEY = '{process-publication-date}'
-
-
-VALID_CODES = re.compile('[0-9/]+')
+    FilterEmptyFields, AddressFixer, GeoCoder
 
 
 class FilterEmptyCodes(FilterEmptyFields):
-
     FIELDS_TO_CHECK = {
-        'process-code': lambda v: VALID_CODES.fullmatch(v)
+        'business-kind': None,
+        'address-full': None,
+        'business-name': None,
+        'property-code': None
     }
+
+
+class SelectOneUniqueItem(DuplicateRemover):
+    ORDER_BY_KEY = '{business-name}{property-code}'
 
 
 def flows(config, context):
     return enrichments_flows(
         config, context,
-        FilterEmptyCodes,
         MunicipalityNameToCodeEnricher,
-        SelectLatestProcessEnricher,
+        FilterEmptyCodes,
+        SelectOneUniqueItem,
+        AddressFixer,
+        GeoCoder,
     )

@@ -5,27 +5,14 @@ from dgp.core.base_enricher import ColumnTypeTester, ColumnReplacer, \
         DatapackageJoiner, enrichments_flows, BaseEnricher
 from dgp.config.consts import RESOURCE_NAME
 
-from datacity_server.processors import MunicipalityNameToCodeEnricher
+from datacity_server.processors import MunicipalityNameToCodeEnricher, FilterEmptyFields
 
 
-class FilterEmptyCodes(BaseEnricher):
+class FilterEmptyCodes(FilterEmptyFields):
 
-    def test(self):
-        return True
-
-    def work(self):
-        def func(package):
-            yield package.pkg
-            for i, res in enumerate(package):
-                if i != len(package.pkg.resources) - 1:
-                    yield res
-                else:
-                    yield filter(
-                        lambda row: ('card-code' not in row or 
-                                     (row['card-code'] and len(row['card-code']) >= 10)),
-                        res
-                    )
-        return func
+    FIELDS_TO_CHECK = {
+        'card-code': lambda v: len(v) > 10
+    }
 
     def postflow(self):
         return Flow(self.work())
