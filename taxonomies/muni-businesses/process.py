@@ -2,11 +2,11 @@ from dataflows import Flow, add_computed_field, delete_fields, \
     printer, set_type
 
 from dgp.core.base_enricher import ColumnTypeTester, ColumnReplacer, \
-        DatapackageJoiner, enrichments_flows, BaseEnricher, DuplicateRemover
+        DatapackageJoiner, enrichments_flows, BaseEnricher
 from dgp.config.consts import RESOURCE_NAME
 
 from datacity_server.processors import MunicipalityNameToCodeEnricher, \
-    FilterEmptyFields, AddressFixer, GeoCoder
+    FilterEmptyFields, AddressFixer, GeoCoder, StreamingDuplicateRemover
 
 
 class FilterEmptyCodes(FilterEmptyFields):
@@ -18,16 +18,12 @@ class FilterEmptyCodes(FilterEmptyFields):
     }
 
 
-class SelectOneUniqueItem(DuplicateRemover):
-    ORDER_BY_KEY = '{business-name}{property-code}'
-
-
 def flows(config, context):
     return enrichments_flows(
         config, context,
         MunicipalityNameToCodeEnricher,
         FilterEmptyCodes,
-        SelectOneUniqueItem,
+        StreamingDuplicateRemover,
         AddressFixer,
         GeoCoder,
     )

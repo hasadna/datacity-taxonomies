@@ -1,10 +1,39 @@
 import geocoder
 import requests
 
-from dataflows import Flow, add_field
+from dataflows import Flow, add_field, ResourceWrapper
 from dgp.core.base_enricher import BaseEnricher, \
     DatapackageJoiner, ColumnTypeTester
-from dgp.config.consts import RESOURCE_NAME
+from dgp.config.consts import RESOURCE_NAME, CONFIG_PRIMARY_KEY
+
+
+class StreamingDuplicateRemover(BaseEnricher):
+
+    def test(self):
+        return True
+
+    def remove_dups(self, key_field_names):
+        def func(rows: ResourceWrapper):
+            if rows.res.name == RESOURCE_NAME:
+                keys = set()
+                for row in rows:
+                    key = tuple(row.get(f) for f in key_field_names)
+                    if key in keys:
+                        continue
+                    keys.add(key)
+                    yield row
+            else:
+                return rows
+        return func
+
+    def postflow(self):
+        key_field_names = [
+            ct.replace(':', '-')
+            for ct in self.config.get(CONFIG_PRIMARY_KEY)
+        ]
+        return Flow(
+            self.remove_dups(key_field_names)
+        )
 
 
 class MunicipalityNameToCodeEnricher(DatapackageJoiner):
