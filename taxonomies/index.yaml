@@ -25,3 +25,11 @@ muni-businesses:
       - municipality:name
       - source:kind
       - source:date
+schools:
+  title: מוסדות חינוך
+  column_types: schools/column_types.json
+  processing_module: schools/process.py
+  config:
+    key-fields:
+      - municipality:name
+    db-update-mode: update
