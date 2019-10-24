@@ -122,10 +122,10 @@ class DBPreparerDGP(BaseDataGenusProcessor):
                 cts[ct['name'].replace(':', '-')] = ct
 
             descriptor = package.pkg.descriptor
-            resource = None
-            for res in descriptor['resources']:
+            resource_idx = None
+            for idx, res in enumerate(descriptor['resources']):
                 if res['name'] == RESOURCE_NAME:
-                    resource = res
+                    resource_idx = idx
                     fields = res['schema']['fields']
                     for field in fields:
                         if field['name'] in cts:
@@ -142,13 +142,12 @@ class DBPreparerDGP(BaseDataGenusProcessor):
                         if ct.get('unique'):
                             res['schema']['primaryKey'].append(ct_name)
                             pks.append(ct_name)
-                    fields.append(dict(
-                        name='_source', type='string'
-                    ))
-                    res['schema']['primaryKey'].append('_source')
-            if resource is not None:
+            if resource_idx is not None:
                 descriptor = copy.deepcopy(descriptor)
+                resource = descriptor['resources'][resource_idx]
                 descriptor['resources'] = [resource]
+                resource['schema']['fields'].append(dict(name='_source', type='string'))
+                resource['schema']['primaryKey'].append('_source')
                 table_name = self.config.get(CONFIG_TAXONOMY_ID)\
                     .replace('-', '_')
                 Flow(
