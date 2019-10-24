@@ -106,9 +106,18 @@ class DBPreparerDGP(BaseDataGenusProcessor):
         super().__init__(config, context)
         self.lazy_engine = lazy_engine
 
+    def fill_in_pks(self, res, pks):
+        for row in res:
+            for pk in pks:
+                assert pk not in row, 'Found %s in %s' % (pk, row)
+                row[pk] = ''
+            yield row
+
     def add_missing_fields(self):
+
         def func(package: PackageWrapper):
             cts = {}
+            pks = []
             for ct in self.config.get(CONFIG_TAXONOMY_CT):
                 cts[ct['name'].replace(':', '-')] = ct
 
@@ -132,6 +141,7 @@ class DBPreparerDGP(BaseDataGenusProcessor):
                         ))
                         if ct.get('unique'):
                             res['schema']['primaryKey'].append(ct_name)
+                            pks.append(ct_name)
                     fields.append(dict(
                         name='_source', type='string'
                     ))
@@ -153,7 +163,11 @@ class DBPreparerDGP(BaseDataGenusProcessor):
                     )
                 ).process()
             yield package.pkg
-            yield from package
+            for res in package:
+                if res.res.name == RESOURCE_NAME:
+                    yield self.fill_in_pks(res, pks)
+                else:
+                    yield res
         return func
 
     def flow(self):
