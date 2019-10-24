@@ -2,6 +2,7 @@ import os
 import copy
 
 from dgp_server.blueprint import DgpServer
+from dgp_server.log import logger
 
 from dataflows import Flow, add_computed_field, duplicate, \
     set_type, set_primary_key, dump_to_sql, add_field, join_with_self, \
@@ -110,7 +111,7 @@ class DBPreparerDGP(BaseDataGenusProcessor):
         for row in res:
             for pk in pks:
                 assert pk not in row, 'Found %s in %s' % (pk, row)
-                row[pk] = ''
+                row[pk] = '-'
             yield row
 
     def add_missing_fields(self):
@@ -130,7 +131,7 @@ class DBPreparerDGP(BaseDataGenusProcessor):
                     for field in fields:
                         if field['name'] in cts:
                             cts.pop(field['name'])
-                    print('MISSING:', list(cts.keys()))
+                    logger.info('Adding missing map fields %r', list(cts.keys()))
                     cts = list(cts.values())
                     for ct in cts:
                         ct_name = ct['name'].replace(':', '-')
@@ -164,7 +165,9 @@ class DBPreparerDGP(BaseDataGenusProcessor):
                 ).process()
             yield package.pkg
             for res in package:
+                logger.error('FILLING IN %r', res.res.name)
                 if res.res.name == RESOURCE_NAME:
+                    logger.error('FILLING IN')
                     yield self.fill_in_pks(res, pks)
                 else:
                     yield res
