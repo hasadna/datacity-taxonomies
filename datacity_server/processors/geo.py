@@ -2,6 +2,7 @@
 import geocoder
 import requests
 import pyproj
+import os
 
 from dataflows import Flow, add_field
 from dgp.core.base_enricher import BaseEnricher, ColumnTypeTester
@@ -60,6 +61,7 @@ class GeoCoder(ColumnTypeTester):
     def geocode(self):
         session = requests.Session()
         cache = {}
+        api_key = os.environ.get('GOOGLE_MAPS_API_KEY')
 
         def func(row):
             address = row.get('address-full')
@@ -72,11 +74,13 @@ class GeoCoder(ColumnTypeTester):
                 if address in cache:
                     result = cache[address]
                 else:
-                    g = geocoder.osm(address, session=session, url='https://geocode.datacity.org.il/')
+                    result = None
+                    if api_key:
+                        g = geocoder.google(address, session=session, key=api_key, language='he')
+                    else:
+                        g = geocoder.osm(address, session=session, url='https://geocode.datacity.org.il/', language='he')
                     if g.ok and g.lat and g.lng:
                         result = (g.lat, g.lng)
-                    else:
-                        result = None
                     cache[address] = result
                 if result:
                     row['location-lat'], row['location-lon'] = result
