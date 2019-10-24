@@ -121,7 +121,7 @@ class DBPreparerDGP(BaseDataGenusProcessor):
             for ct in self.config.get(CONFIG_TAXONOMY_CT):
                 cts[ct['name'].replace(':', '-')] = ct
 
-            descriptor = copy.deepcopy(package.pkg.descriptor)
+            descriptor = package.pkg.descriptor
             resource = None
             for res in descriptor['resources']:
                 if res['name'] == RESOURCE_NAME:
@@ -147,6 +147,7 @@ class DBPreparerDGP(BaseDataGenusProcessor):
                     ))
                     res['schema']['primaryKey'].append('_source')
             if resource is not None:
+                descriptor = copy.deepcopy(descriptor)
                 descriptor['resources'] = [resource]
                 table_name = self.config.get(CONFIG_TAXONOMY_ID)\
                     .replace('-', '_')
